@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#050809">
+  <title>LAST STOP — Line 13</title>
+  <style>
+{{FONTS}}
+{{STYLES}}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="game-canvas" tabindex="0" aria-label="Last Stop game view"></canvas>
+
+    <div class="fx" id="fx-vignette"></div>
+    <div class="fx" id="low-health"></div>
+    <div class="fx" id="damage-flash"></div>
+    <div class="fx" id="fx-grain"></div>
+    <div class="fx" id="fx-scanlines"></div>
+    <div id="cinema-bars" aria-hidden="true"><i></i><i></i></div>
+
+    <!-- =====================================================================
+         IN-GAME HUD
+    ====================================================================== -->
+    <main id="hud" class="ui-hidden" aria-live="off">
+      <div class="hud-top">
+        <div class="station-readout">
+          <div class="line-badge"><span id="line-number">13</span><small>LINE</small></div>
+          <div class="station-copy">
+            <div class="eyebrow"><span class="live-dot"></span> METROPOLITAN TRANSIT AUTHORITY <span>//</span> NIGHT SERVICE</div>
+            <div class="station-name" id="station-name">HARBOR HEIGHTS</div>
+            <div class="station-sub">
+              <span id="sector-id">SECTOR 01</span>
+              <span class="divider"></span>
+              <span id="objective-text">SECURE THE PLATFORM</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="wave-readout" id="wave-readout">
+          <div class="wave-kicker">THREAT DIRECTIVE</div>
+          <div class="wave-title">
+            <span id="wave-num">WAVE 01</span>
+            <span id="enemy-summary"><strong>0</strong> HOSTILES</span>
+          </div>
+          <div class="wave-track"><i id="threat-fill"></i></div>
+          <div class="wave-status-line">
+            <span id="wave-status">CONTACT PENDING</span>
+            <span id="threat-code">MTA-13 / DARK</span>
+          </div>
+        </div>
+
+        <aside class="minimap-wrap" aria-label="Station minimap">
+          <div class="map-head">SECTOR MAP <span id="map-line">LINE 13</span></div>
+          <canvas id="minimap" width="440" height="302"></canvas>
+          <div class="map-foot">
+            <span class="you"><i></i>YOU</span>
+            <span class="hostile"><i></i>HOSTILE</span>
+            <span class="train-dot"><i></i>TRAIN</span>
+          </div>
+        </aside>
+      </div>
+
+      <div id="objective-toast">
+        <div class="toast-kicker">PRIORITY TRANSMISSION</div>
+        <div id="toast-title">CLEAR THE PLATFORM</div>
+        <div id="toast-copy">Hostile signatures inbound from both tunnel approaches.</div>
+      </div>
+
+      <div id="kill-feed"></div>
+      <div id="damage-indicators" aria-hidden="true">
+        <div class="dmg-dir" style="--rot:0deg"></div>
+        <div class="dmg-dir" style="--rot:90deg"></div>
+        <div class="dmg-dir" style="--rot:180deg"></div>
+        <div class="dmg-dir" style="--rot:270deg"></div>
+      </div>
+
+      <div id="crosshair" aria-hidden="true">
+        <i class="ch-line ch-n"></i><i class="ch-line ch-s"></i>
+        <i class="ch-line ch-e"></i><i class="ch-line ch-w"></i>
+      </div>
+      <div id="hitmarker" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+      <div id="center-message">
+        <div class="cm-kicker" id="center-kicker">INCOMING</div>
+        <div class="cm-main" id="center-main">TRAIN APPROACHING</div>
+      </div>
+
+      <div id="interact-prompt">
+        <div class="keycap">E</div>
+        <div class="prompt-copy">
+          <small>MIDDLE CAR // DOORS OPEN</small>
+          <span>BOARD THE TRAIN</span>
+        </div>
+      </div>
+
+      <div id="reload-indicator">
+        <div class="reload-label">RELOADING</div>
+        <div class="reload-track"><i id="reload-fill"></i></div>
+      </div>
+
+      <div id="pickup-note">SALVAGE COLLECTED</div>
+
+      <div class="hud-bottom">
+        <section class="vitals" aria-label="Player vitals">
+          <div class="vitals-head">
+            <div class="vitals-label">OPERATOR VITALS</div>
+            <div class="health-number"><span id="health-value">100</span><span class="health-unit">HP</span></div>
+          </div>
+          <div class="health-track"><i id="health-fill"></i></div>
+          <div class="armor-row">
+            <span class="armor-label">PLATE</span>
+            <div class="armor-track"><i id="armor-fill"></i></div>
+            <span id="armor-value">75</span>
+          </div>
+          <div class="vitals-note"><span class="dot"></span><span id="vitals-note">VITAL SIGNS STABLE</span></div>
+        </section>
+
+        <div class="control-strip" aria-hidden="true">
+          <span><b>WASD</b>MOVE</span><span class="sep"></span>
+          <span><b>SHIFT</b>SPRINT</span><span class="sep"></span>
+          <span><b>R</b>RELOAD</span><span class="sep"></span>
+          <span><b>1–3</b>WEAPONS</span><span class="sep"></span>
+          <span><b>SPACE</b>JUMP</span>
+        </div>
+
+        <section class="ammo-panel" aria-label="Weapon and ammunition">
+          <div class="weapon-meta">
+            <span id="weapon-class">SERVICE PISTOL</span>
+            <span class="weapon-line"></span>
+            <span id="fire-mode">SEMI</span>
+          </div>
+          <div class="ammo-row">
+            <span id="ammo-mag">15</span>
+            <span class="ammo-slash">/</span>
+            <span id="ammo-reserve">120</span>
+          </div>
+          <div id="weapon-name">VANTAGE P9</div>
+          <div class="weapon-slots">
+            <div class="weapon-slot active" id="slot-0"><b>01</b>P9</div>
+            <div class="weapon-slot" id="slot-1"><b>02</b>VX-7</div>
+            <div class="weapon-slot" id="slot-2"><b>03</b>BR-12</div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- =====================================================================
+         RIDE HUD
+    ====================================================================== -->
+    <section id="ride-hud" aria-live="polite">
+      <div class="ride-top">
+        <div class="ride-brand">MTA <span>//</span> LINE 13 <span>//</span> NIGHT SERVICE</div>
+        <div id="ride-next">MERIDIAN EXCHANGE</div>
+        <div class="ride-progress">
+          <span class="dot"></span>
+          <div class="route"><i id="ride-route-fill"></i></div>
+          <span class="dot"></span>
+        </div>
+      </div>
+      <div class="ride-message" id="ride-message">STAND CLEAR OF THE DOORS</div>
+      <div class="ride-bottom">
+        <span>NEXT STOP <strong id="ride-stop-code">M-02</strong></span>
+        <span class="sep"></span>
+        <span>DESTINATION <strong id="ride-destination">OUTER HARBOR</strong></span>
+        <span class="sep"></span>
+        <span>ETA <strong id="ride-eta">00:14</strong></span>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         START SCREEN
+    ====================================================================== -->
+    <section id="start-screen" class="screen" aria-label="Main menu">
+      <header class="start-top">
+        <div class="start-brand">
+          <div class="mta-mark"><span>M</span></div>
+          <div>METROPOLITAN TRANSIT AUTHORITY<br><span style="color:rgba(243,236,220,.31)">EMERGENCY SERVICE DIVISION</span></div>
+        </div>
+        <div class="start-meta">
+          <div>LOCAL TIME<b>02:47:13</b></div>
+          <div>CONDITIONS<b>RAIN / 11°C</b></div>
+          <div class="live-tag">LINE ACTIVE</div>
+        </div>
+      </header>
+
+      <div class="start-main">
+        <div class="start-title-block">
+          <div class="menu-kicker">A SUBTERRANEAN SURVIVAL FPS</div>
+          <h1 class="menu-title">LAST<br><span class="outline">STOP</span><span class="amp">&nbsp;/&nbsp;13</span></h1>
+          <div class="menu-tagline">
+            <span class="tag-rule"></span>
+            <span>THE CITY SLEEPS. <b>THE TUNNELS DON'T.</b><br>HOLD EVERY PLATFORM. BOARD THE LAST TRAIN.</span>
+          </div>
+        </div>
+
+        <aside class="menu-side">
+          <div class="menu-side-label">FIELD BRIEFING <span>03 / 13</span></div>
+          <ol class="brief-list">
+            <li>
+              <span class="brief-num">01</span>
+              <div><strong>Hold the platform</strong><p>Hostiles emerge from the service tunnels in coordinated waves. Keep them off the platform.</p></div>
+            </li>
+            <li>
+              <span class="brief-num">02</span>
+              <div><strong>Clear every wave</strong><p>Watch your ammunition. Salvage drops contain plates and bio-gel. Headshots hit hardest.</p></div>
+            </li>
+            <li>
+              <span class="brief-num">03</span>
+              <div><strong>Board the middle car</strong><p>When the sector is clear, the line runs again. Reach the middle car and press <b style="color:var(--accent)">E</b>.</p></div>
+            </li>
+          </ol>
+          <div class="controls-mini">
+            <span class="control-key"><kbd>WASD</kbd>MOVE</span>
+            <span class="control-key"><kbd>MOUSE</kbd>AIM</span>
+            <span class="control-key"><kbd>LMB</kbd>FIRE</span>
+            <span class="control-key"><kbd>RMB</kbd>AIM DOWN</span>
+            <span class="control-key"><kbd>R</kbd>RELOAD</span>
+            <span class="control-key"><kbd>1–3</kbd>WEAPONS</span>
+            <span class="control-key"><kbd>SHIFT</kbd>SPRINT</span>
+            <span class="control-key"><kbd>SPACE</kbd>JUMP</span>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="start-bottom">
+        <div class="start-note">
+          <b>MTA SECURITY NOTICE 47-B</b><br>
+          Unauthorized personnel will be intercepted. Use of lethal force is authorized.<br>
+          Headphones recommended. Keyboard + mouse required.
+        </div>
+        <div class="start-actions">
+          <div class="hint">POINTER LOCK WILL ENGAGE ON DEPLOY</div>
+          <button class="btn-primary" id="start-button" type="button">
+            <span class="primary-copy">ENTER THE PLATFORM<small>CLICK TO DEPLOY</small></span>
+          </button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- =====================================================================
+         PAUSE SCREEN
+    ====================================================================== -->
+    <section id="pause-screen" class="screen overlay-screen ui-hidden" aria-label="Game paused">
+      <div class="modal">
+        <div class="modal-kicker">MTA // OPERATOR STANDBY</div>
+        <h2>STOP<br><span class="outline">REQUESTED</span></h2>
+        <p class="modal-sub">The line waits. Take a breath, check your ammo, and step back onto the platform when you're ready.</p>
+        <div class="pause-controls">
+          <div class="pause-control"><span>MOVEMENT</span><b>W A S D</b></div>
+          <div class="pause-control"><span>FIRE / AIM</span><b>LMB / RMB</b></div>
+          <div class="pause-control"><span>RELOAD / BOARD</span><b>R / E</b></div>
+          <div class="pause-control"><span>WEAPONS</span><b>1  2  3</b></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" id="resume-button" type="button"><span class="primary-copy">RESUME SERVICE<small>RETURN TO PLATFORM</small></span></button>
+          <button class="btn-ghost" id="pause-restart-button" type="button">RESTART RUN</button>
+          <button class="btn-ghost" id="pause-menu-button" type="button">MAIN MENU</button>
+        </div>
+        <div class="modal-footer"><span>SESSION <b id="pause-session">MTA-13-0247</b></span><span>ESC TO RELEASE MOUSE</span></div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         GAME OVER SCREEN
+    ====================================================================== -->
+    <section id="gameover-screen" class="screen overlay-screen ui-hidden" aria-label="Game over">
+      <div class="modal">
+        <div class="modal-kicker">OPERATOR SIGNAL TERMINATED</div>
+        <h2>LAST<br><span class="death-red">STOP</span></h2>
+        <p class="modal-sub" id="gameover-copy">You held the platform until the line went silent. The night service remembers.</p>
+        <div class="stats-grid">
+          <div class="stat"><div class="stat-label">SECTORS CLEARED</div><div class="stat-value" id="stat-waves">0</div></div>
+          <div class="stat"><div class="stat-label">HOSTILES DOWN</div><div class="stat-value" id="stat-kills">0</div></div>
+          <div class="stat"><div class="stat-label">ACCURACY</div><div class="stat-value" id="stat-accuracy">0<small>%</small></div></div>
+          <div class="stat"><div class="stat-label">TIME SURVIVED</div><div class="stat-value" id="stat-time">00:00</div></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" id="restart-button" type="button"><span class="primary-copy">RE-ENTER SERVICE<small>RESTART FROM SECTOR 01</small></span></button>
+          <button class="btn-ghost" id="gameover-menu-button" type="button">MAIN MENU</button>
+        </div>
+        <div class="modal-footer"><span id="gameover-best">BEST RUN <b>—</b></span><span>THE LINE NEVER CLOSES</span></div>
+      </div>
+    </section>
+
+    <!-- Fade / cinematic transition -->
+    <div id="fade-overlay">
+      <div id="fade-label">MTA // LINE 13</div>
+      <div id="fade-detail">NEXT STOP</div>
+      <div id="fade-line"></div>
+    </div>
+
+    <div id="lock-hint">CLICK TO CAPTURE MOUSE</div>
+
+    <!-- Boot veil -->
+    <div id="boot-veil">
+      <div class="boot-inner">
+        <div class="boot-mark">LAST <span>STOP</span></div>
+        <div class="boot-line"></div>
+        <div class="boot-copy">INITIALIZING PLATFORM INSTRUMENTS</div>
+      </div>
+    </div>
+  </div>
+  <div class="build-tag">MTA // LINE 13 // BUILD 0.9.7</div>
+</div>
+
+<script>
+{{THREE}}
+</script>
+<script>
+{{GAME}}
+</script>
+</body>
+</html>
